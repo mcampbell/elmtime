@@ -50,3 +50,4 @@ flycheck_*.el
 
 # projectiles files
 .projectile
+/elm.js

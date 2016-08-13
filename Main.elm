@@ -7,11 +7,13 @@ import Html.Attributes exposing (..)
 import Html.Events exposing (..)
 import Task exposing (..)
 import Time exposing (..)
+import Basics.Extra exposing (never)
 
 
 -- main
 
 
+main : Program Never
 main =
     App.program
         { init = ( Model 0, getCurrentTime )
@@ -51,7 +53,7 @@ update msg model =
 
 getCurrentTime : Cmd Msg
 getCurrentTime =
-    Task.perform TimeSuccess TimeSuccess Time.now
+    Task.perform never TimeSuccess Time.now
 
 
 
