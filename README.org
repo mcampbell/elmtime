@@ -67,7 +67,7 @@ This actually works fine, but has 2 glaring deficiencies:
 - the app isn't TRULY initialized with a seed until a complete second has elapsed
 
 ** What Ended Up Working
-So the obvious better solution was [[http://package.elm-lang.org/packages/elm-lang/core/4.0.5/Time#now][~Time.now~]], but I totally didn't get how ~Task~ works.
+So the obvious better solution was [[http://package.elm-lang.org/packages/elm-lang/core/4.0.5/Time#now][Time.now]], but I totally didn't get how ~Task~ works.
 I hadn't worked with Tasks before, but it looked like this was the only way. 
 
 ~Time.now~ is defined as ~now : Task x Time~. Wat? "Task" multiplied by "Time"? This makes
@@ -98,7 +98,7 @@ runtime will use this to give the ~Msg~ to the ~update~ function.
 
 The 2 functions threw me a bit and this is where my lack of FP experience hampered me a
 lot. It is a bit clearer now, but what I was not quite understanding was that these
-function signatures are the way they are because what they want are *~Msg~ CONSTRUCTORS*,
+function signatures are the way they are because what they want are *Msg CONSTRUCTORS*,
 which do exactly this; they take a value and return a Msg.  "Because that's how
 constructors do" (apologies to Ze Frank.  If you get this joke, good on you.  If you
 don't, youtube "Ze Frank True Facts".  Worth your time.  Really.)
