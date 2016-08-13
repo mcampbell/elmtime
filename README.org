@@ -1,0 +1,123 @@
+#+OPTIONS: toc:nil
+
+* Getting The Current Time In Elm
+
+I've just discovered Elm, and even though I'm not experienced in modern UI development,
+Javascript, nor Functional Programming beyond the most basic of basics, I have become
+quickly quite enamored with it.  Something about how things are put together has tickled
+my brain.
+
+So, I decided to write a toy program which needed random numbers. I quickly realized that
+in order to seed the generator, you needed... a seed. Which of course needed to be
+different each time the program ran, so I'd get a different string of random numbers.
+While this would be child's play in any language I'm familiar with, it was not so in Elm,
+for me.  What follows is how I did it.  Hopefully this will be helpful to someone.
+
+I decided to use "current time", as this would be different /enough/ for my toy purposes.
+
+** What Didn't Work
+When I started on the journey I looked on the web and there were a few classes of results,
+but none of them worked for me, likely due to my ignorance with the language, but I'll
+mention them here perhaps to save someone some time.
+
+*** "Signals"
+There are a number of blog posts and StackOverflow answers dealing with this using
+Signals.  Having come to elm at version 0.17, and having read a bit before I started, I
+knew this was a deprecated feature, so I didn't bother to try to implement anything with
+Signals.
+
+*** Ports
+This one popped up a lot. The idea is you put a ~port~ in your app, and feed it with the
+javascript in which you embed the app. This way you can feed the port with something like
+Javascript's ~currentTime~ or a Javascript random number, which uses the current time as
+*ITS* seed.
+
+The problem here was that every resource I /found/ was using the 0.16 port structure, and
+the 0.17 compiler was not helpful here.
+
+#+BEGIN_SRC 
+Port `currentTime` has an invalid type.
+
+118| port currentTime : Float
+     ^^^^^^^^^^^^^^^^^^^^^^^^
+You are saying it should be:
+
+    Float
+
+But you need to use the particular format described here:
+<http://guide.elm-lang.org/effect_managers/>
+#+END_SRC
+
+But "here" has *NO formatting advice whatsoever*! This has so far been the only time the
+docs and/or compiler has failed me.
+
+This was a failure on my part more than anything; I've since found more info on ports in
+0.17. 
+
+** What Kind of Worked
+This isn't pretty, and I'm embarassed to admit it, but my first working version of the
+code did this:
+
+- Initialize the model to include a ~Maybe Seed~ value of ~Nothing~
+- set up a "Time" subscription to tick me the time every second
+- the update case for that would check the model to for a ~Nothing~ seed, if set it if so
+  
+This actually works fine, but has 2 glaring deficiencies:
+- it's firing an event every second, when only one event is needed
+- the app isn't TRULY initialized with a seed until a complete second has elapsed
+
+** What Ended Up Working
+So the obvious better solution was [[http://package.elm-lang.org/packages/elm-lang/core/4.0.5/Time#now][~Time.now~]], but I totally didn't get how ~Task~ works.
+I hadn't worked with Tasks before, but it looked like this was the only way. 
+
+~Time.now~ is defined as ~now : Task x Time~. Wat? "Task" multiplied by "Time"? This makes
+zero sense. Of course it would, because I misread the "x" as a times/multiplication
+symbol.
+
+So it looks like a ~Task~ is just a type alias that has an 'err' thing and an 'ok' thing,
+and ~Time.now~ is a ~Task~ whose 'err' thing is an 'x', and whose 'ok' thing is a ~Time~.
+I followed ~Time~ to realize that it's just a ~Float~.  Based on what I've read it sounds
+like ~Time.now~ never, ever fails, so the 'err' thing is unnecessary.  This makes sense to
+me in English, but not so much in code, as we'll see later.
+
+As is documented, none of this actually /does/ anything.  You still have to tell the Task
+to run, and that's done with ~Task.perform~.  This has a gem of a type signature:
+
+[[http://package.elm-lang.org/packages/elm-lang/core/4.0.5/Task#perform][perform : (x -> msg) -> (a -> msg) -> Task x a -> Cmd msg]]
+
+So this takes 2 functions, both of which need to return the same type, which since we're
+in Elm and we know where this is going, will be the ~Msg~ type of your app; and a ~Task~
+which has 2 types which correspond to the aforementioned 2 functions *parameter* types (1
+each), and returns a ~Cmd~ with the appropriate ~Msg~.  
+
+So if I'm reading this right, you pass it a function to call on error, a function to call
+on success, and a task. ~Task.perform~ performs, and based on the return of that
+"performance", calls the appropriate function that you gave it, takes the result of that
+which must be a ~msg~ (or for us, typically, a ~Msg~), and wraps it in a ~Cmd~. Then, the
+runtime will use this to give the ~Msg~ to the ~update~ function.
+
+The 2 functions threw me a bit and this is where my lack of FP experience hampered me a
+lot. It is a bit clearer now, but what I was not quite understanding was that these
+function signatures are the way they are because what they want are *~Msg~ CONSTRUCTORS*,
+which do exactly this; they take a value and return a Msg.  "Because that's how
+constructors do" (apologies to Ze Frank.  If you get this joke, good on you.  If you
+don't, youtube "Ze Frank True Facts".  Worth your time.  Really.)
+
+Anyway, so in the ~Time.now~ case, the 'ok' case calls the ~Msg~ constructor with a
+~Time~, presumably the current version.   In the 'err' case, well, that allegedly never
+happens, so that first Constructor function you pass never gets called.  But you have to
+give it SOMETHING or the compiler complains.  I made do by passing it the same thing I
+passed to the 'ok' case, which is almost certainly wrong, and I could use some help
+deciphering what the correct thing to do is.
+
+In any case, this is working, and is demonstrated by the small Elm program herein.  You
+can run this with ~elm-reactor~.
+
+** What's Left
+
+Nothing, really, but I'd really like to understand what the idiom is for "ignoring" one of
+the 2 cases for Task.  What is one SUPPOSED to do here?
+
+
+
+
