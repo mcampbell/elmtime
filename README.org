@@ -75,20 +75,21 @@ zero sense. Of course it would, because I misread the "x" as a times/multiplicat
 symbol.
 
 So it looks like a ~Task~ is just a type alias that has an 'err' thing and an 'ok' thing,
-and ~Time.now~ is a ~Task~ whose 'err' thing is an 'x', and whose 'ok' thing is a ~Time~.
-I followed ~Time~ to realize that it's just a ~Float~.  Based on what I've read it sounds
-like ~Time.now~ never, ever fails, so the 'err' thing is unnecessary.  This makes sense to
-me in English, but less so in code.
+and ~Time.now~ is a ~Task~ whose 'err' thing is an 'x', and whose 'ok' thing is a ~Time~
+(which is really just a ~Float~). From everything I've read it sounds like ~Time.now~
+never, ever fails, so the 'err' thing is unnecessary, and is thus notated in the
+annotation as ~x~. 
 
-As is documented, none of this actually /does/ anything.  You still have to tell the Task
-to run, and that's done with ~Task.perform~.  This has a gem of a type signature:
+So, as is documented, none of this actually /does/ anything. You still have to tell the
+Task to run, and that's done with ~Task.perform~. This has a gem of a type signature:
 
 [[http://package.elm-lang.org/packages/elm-lang/core/4.0.5/Task#perform][perform : (x -> msg) -> (a -> msg) -> Task x a -> Cmd msg]]
 
-So this takes 2 functions, both of which need to return the same type, which since we're
-in Elm and we know where this is going, will be the ~Msg~ type of your app; and a ~Task~
-which has 2 types which correspond to the aforementioned 2 functions *parameter* types (1
-each), and returns a ~Cmd~ with the appropriate ~Msg~.  
+This takes 2 functions, both of which need to return the same type (denoted by the reuse
+of the ~msg~ type placeholder), which since we're in Elm and we know where this is going,
+will be the ~Msg~ type of your app; and a ~Task~ which has 2 types which correspond to the
+aforementioned 2 functions *parameter* types (1 each), and returns a ~Cmd~ with the
+appropriate ~Msg~.
 
 So if I'm reading this right, you pass it a function to call on error, a function to call
 on success, and a task. ~Task.perform~ performs, and based on the return of that
@@ -149,6 +150,20 @@ call be a function since it's evaluated in its constructor form.
 
 You will now have to account for this in your ~update~ function in either case.  I can see
 this being useful if you're using NoOp for other things already.
+
+**** NoOp Variation
+A minor variation on the ~NoOp~ pattern is to just reuse your "success" message for the
+"error" message.
+#+BEGIN_SRC 
+getCurrentTime =
+    Task.perform TimeSuccess TimeSuccess Time.now
+#+END_SRC
+This is perhaps less clear since it does require that people understand that the error
+case never gets called and re-using the "success" case is just done as a placeholder.
+
+The one advantage here over a new message is that you've already got it in your ~update~
+function so you don't need to add a new message handler branch to it.  Is that advantage
+worth it?  You be the judge.
 
 *** always Debug.crash
 This method is also an effort to be extra safe while satisfying the compiler, at the same
