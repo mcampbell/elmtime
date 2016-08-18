@@ -165,23 +165,6 @@ The one advantage here over a new message is that you've already got it in your 
 function so you don't need to add a new message handler branch to it.  Is that advantage
 worth it?  You be the judge.
 
-*** always Debug.crash
-This method is also an effort to be extra safe while satisfying the compiler, at the same
-time as being descriptive.
-
-#+BEGIN_SRC elm
-getCurrentTime =
-    Task.perform (always <| Debug.crash "") TimeSuccess Time.now
-#+END_SRC
-
-What this is doing is providing a partially applied function (~always~) using Debug.crash
-with a blank error message as the first parameter; the result of the Time.now error case
-(which never happens) being the second.  ~always~, if it ever got evaluated, would theoretically
-return the first value, but not only will it never run, it would crash if it does.
-
-But it's kind of warm and cozy feeling; "I know you say you'll never do this, but if you
-do, I'm watching."
-
 *** never
 This may be the one with the least code involved.
 
